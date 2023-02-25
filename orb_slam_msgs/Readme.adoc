@@ -1,0 +1,5 @@
+== ROS2 wrapper for ORB-SLAM3
+
+* publish tf
+* continue on new map
+* mono scale factor

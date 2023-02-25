@@ -10,6 +10,7 @@ find_package(geometry_msgs REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Track.msg"
   "srv/SaveMap.srv"
+  "srv/ScaleFactor.srv"
   DEPENDENCIES std_msgs geometry_msgs
 )
 

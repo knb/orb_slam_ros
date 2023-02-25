@@ -12,7 +12,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "cv_bridge/cv_bridge.h"
 #include "rclcpp/time.hpp"
-#include <cart_interfaces/srv/scale_factor.hpp>
+#include "orb_slam_msgs/srv/scale_factor.hpp"
 
 #include <tf2/convert.h>
 #include <tf2/LinearMath/Transform.h>
@@ -25,9 +25,6 @@
 
 #include <map>
 
-using std::placeholders::_1;
-using std::placeholders::_2;
-
 class Mono : public rclcpp::Node
 {
   public:
@@ -37,8 +34,8 @@ class Mono : public rclcpp::Node
   private:
     void timer_callback();
     void load_params();
-    void srv_callback(const std::shared_ptr<cart_interfaces::srv::ScaleFactor::Request> request,
-          std::shared_ptr<cart_interfaces::srv::ScaleFactor::Response> response);
+    void srv_callback(const std::shared_ptr<orb_slam_msgs::srv::ScaleFactor::Request> request,
+          std::shared_ptr<orb_slam_msgs::srv::ScaleFactor::Response> response);
     void set_offset(std::string from_id, long unsigned int map_id);
     void topic_callback(const sensor_msgs::msg::Image::ConstSharedPtr & image_msg);
     void publish_pose(Sophus::SE3f twc, rclcpp::Time msg_time) const;
@@ -58,7 +55,7 @@ class Mono : public rclcpp::Node
     std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener;
     std::shared_ptr<tf2_ros::Buffer> tf_buffer;
-    rclcpp::Service<cart_interfaces::srv::ScaleFactor>::SharedPtr service;
+    rclcpp::Service<orb_slam_msgs::srv::ScaleFactor>::SharedPtr service;
 
     ORB_SLAM3::System * orb_slam;
     long unsigned int current_map_id;

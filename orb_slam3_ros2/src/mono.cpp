@@ -5,6 +5,9 @@
 
 #include "rclcpp/rclcpp.hpp"
 
+using std::placeholders::_1;
+using std::placeholders::_2;
+
 Mono::Mono() : rclcpp::Node("orb_slam_mono"), current_map_id(0)
 {
   load_params();
@@ -36,7 +39,7 @@ Mono::Mono() : rclcpp::Node("orb_slam_mono"), current_map_id(0)
   // cout << "call: rclcpp::ParameterEventHandler" << std::endl;
   param_subscriber_ = std::make_shared<rclcpp::ParameterEventHandler>(this);
 
-  service = create_service<cart_interfaces::srv::ScaleFactor>("set_scale_factor", 
+  service = create_service<orb_slam_msgs::srv::ScaleFactor>("set_scale_factor",
         std::bind(&Mono::srv_callback, this, _1, _2));
 
   // Set a callback for this node's integer parameter, "scale_factor"
@@ -52,7 +55,7 @@ Mono::Mono() : rclcpp::Node("orb_slam_mono"), current_map_id(0)
   // cout << "param_subscriber_->add_parameter_callback" << std::endl;
   param_cb_handle_ = param_subscriber_->add_parameter_callback("scale_factor", cb);
   // cout << "end of constructor" << std::endl;
-  timer_ = this->create_wall_timer(20ms, std::bind(&Mono::timer_callback, this));  
+  timer_ = this->create_wall_timer(20ms, std::bind(&Mono::timer_callback, this));
 }
 
 Mono::~Mono()
@@ -88,12 +91,12 @@ void Mono::load_params()
   RCLCPP_INFO(get_logger(), "Settings: %s", settings_file_name_param.c_str());
 }
 
-void Mono::srv_callback(const std::shared_ptr<cart_interfaces::srv::ScaleFactor::Request> request,
-      std::shared_ptr<cart_interfaces::srv::ScaleFactor::Response> response)
+void Mono::srv_callback(const std::shared_ptr<orb_slam_msgs::srv::ScaleFactor::Request> request,
+      std::shared_ptr<orb_slam_msgs::srv::ScaleFactor::Response> response)
 {
   response->responce = true;
   scale_factor_param = request->scale_factor;
-  RCLCPP_INFO(get_logger(), "set scale factor: [%f]", request->scale_factor);  
+  RCLCPP_INFO(get_logger(), "set scale factor: [%f]", request->scale_factor);
 }
 
 
@@ -180,6 +183,7 @@ void Mono::set_offset(std::string from_id, long unsigned int map_id)
     // Get the transform from target to camera
     geometry_msgs::msg::TransformStamped tf_msg = tf_buffer->lookupTransform(from_id, camera_frame_id_param, tf2::TimePointZero);
     tf2::fromMsg(tf_msg.transform, tf0);
+    RCLCPP_INFO(this->get_logger(), "set offset");
   }
   catch (tf2::TransformException &ex)
   {

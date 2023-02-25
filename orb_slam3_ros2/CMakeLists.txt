@@ -15,7 +15,7 @@ find_package(rclcpp REQUIRED)
 
 # find_package(std_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
-find_package(cart_interfaces REQUIRED)
+find_package(orb_slam_msgs REQUIRED)
 # find_package(image_transport REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -63,7 +63,7 @@ ament_target_dependencies(orb_slam_mono
   rclcpp
   # std_msgs
   cv_bridge
-  cart_interfaces
+  orb_slam_msgs
   # image_transport
   tf2
   tf2_ros
