@@ -13,6 +13,8 @@ class MonoScale(Node):
         super().__init__("mono_scale")
         self.nodename = "mono_scale"
         self.get_logger().info(f"{self.nodename} started")
+        self.check_distance = float(self.declare_parameter('check_distance', 0.5).value)
+
         # subscriptions
         self.create_subscription(PoseStamped, "mono/tcw", self.tcw_callback, 1)
         self.create_subscription(Odometry, "odom", self.odom_callback, 1)
@@ -48,8 +50,8 @@ class MonoScale(Node):
         if self.odom_start:
             p = msg.pose.pose.position
             od = self.distance(p, self.odom0)
-            self.get_logger().info(f"{od}")
-            if od > 1.0:
+            self.get_logger().info(f"{od}, odom.x: {p.x}")
+            if od > self.check_distance:
                 twc_d = self.distance(self.tcw_pos0, self.tcw_pos_last)
                 self.get_logger().info(f"odom: {od}, tcw: {twc_d}, rate: {od/twc_d}")
                 res = self.send_request(od/twc_d)

@@ -32,13 +32,6 @@ def generate_launch_description():
             default_value='false',
             description='Use simulation (Gazebo) clock if true'),
 
-        # DeclareLaunchArgument(
-        #     'params_file',
-        #     default_value=os.path.join(
-        #         package_dir,
-        #         'config', 'd435_mono.yaml'),
-        #     description='Full path to the ROS2 parameters file to use for all launched nodes'),
-
         DeclareLaunchArgument(
             'voc_file',
             default_value=os.path.join(
@@ -59,16 +52,16 @@ def generate_launch_description():
             description="Use Viewer"
         ),
 
-        # DeclareLaunchArgument(
-        #     'publish_tf',
-        #     default_value="false",
-        #     description="Publish TF"
-        # ),
-
         DeclareLaunchArgument(
             'target_frame_id',
             default_value="odom",
             description="Target Tf frame id"
+        ),
+
+        DeclareLaunchArgument(
+            'image_topic',
+            default_value="/camera/infra1/image_rect_raw",
+            description="camera topic"
         ),
 
         Node(
