@@ -15,14 +15,15 @@ def generate_launch_description():
     settings_file = LaunchConfiguration('settings_file')
     use_viewer = LaunchConfiguration('use_viewer')
     target_frame_id = LaunchConfiguration('target_frame_id')
+    image_topic = LaunchConfiguration('image_topic')
 
     remappings = [
         # ('/odom', '/odometry/filtered'),
         # ('/odom', '/wheel/odom'),
-        ('/camera/image_raw', '/camera/infra1/image_rect_raw'),
+        # ('/camera/image_raw', '/camera/infra1/image_rect_raw'),
         # ('/camera/image_raw', '/gst_image_pub'),
-        ('/camera/camera_info', '/camera/color/camera_info'),
-        ('/camera/depth/image_rect_raw', '/camera/aligned_depth_to_color/image_raw')
+        # ('/camera/camera_info', '/camera/color/camera_info'),
+        # ('/camera/depth/image_rect_raw', '/camera/aligned_depth_to_color/image_raw')
     ]
 
     return LaunchDescription([
@@ -76,7 +77,8 @@ def generate_launch_description():
                "use_sim_time": use_sim_time,
                "settings_file": settings_file,
                "use_viewer": use_viewer,
-               "target_frame_id": target_frame_id},
+               "target_frame_id": target_frame_id,
+               "image_topic": image_topic},
             ],
             package='orb_slam3_ros2',
             executable='orb_slam_mono',

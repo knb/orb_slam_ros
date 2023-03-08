@@ -3,9 +3,14 @@
 <package format="3">
   <name>orb_slam_utils</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="kensei@artifarm.com">kensei</maintainer>
-  <license>TODO: License declaration</license>
+  <description>ORB SLAM3 ros utils</description>
+  <maintainer email="kensei@artifarm.com">Kensei Nakamura</maintainer>
+  <license>MIT</license>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>orb_slam_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

@@ -24,38 +24,17 @@ Mono::Mono() : rclcpp::Node("orb_slam_mono"), current_map_id(0)
 
   // cout << "call: set_offset" << std::endl;
   set_offset(target_frame_id_param, current_map_id);
-  set_offset(target_frame_id_param, current_map_id);
   // cout << "call: set 0 offset" << std::endl;
   current_transform = tf_offsets[current_map_id];
   // cout << "call: set 0 offset" << std::endl;
   current_transform = tf_offsets[current_map_id];
 
   subscription = this->create_subscription<sensor_msgs::msg::Image>(
-      "/camera/image_raw", 10, std::bind(&Mono::topic_callback, this, _1));
+      image_topic_param, 10, std::bind(&Mono::topic_callback, this, _1));
   tcw_publisher = create_publisher<geometry_msgs::msg::PoseStamped>("mono/tcw", 10);
-
-  // Create a parameter subscriber that can be used to monitor parameter changes
-  // (for this node's parameters as well as other nodes' parameters)
-  // cout << "call: rclcpp::ParameterEventHandler" << std::endl;
-  param_subscriber_ = std::make_shared<rclcpp::ParameterEventHandler>(this);
 
   service = create_service<orb_slam_msgs::srv::ScaleFactor>("set_scale_factor",
         std::bind(&Mono::srv_callback, this, _1, _2));
-
-  // Set a callback for this node's integer parameter, "scale_factor"
-  // cout << "cb = ..." << std::endl;
-  auto cb = [this](const rclcpp::Parameter & p) {
-      scale_factor_param = p.as_double();
-      RCLCPP_INFO(
-        this->get_logger(), "cb: Received an update to parameter \"%s\" of type %s: \"%f\"",
-        p.get_name().c_str(),
-        p.get_type_name().c_str(),
-        scale_factor_param);
-    };
-  // cout << "param_subscriber_->add_parameter_callback" << std::endl;
-  param_cb_handle_ = param_subscriber_->add_parameter_callback("scale_factor", cb);
-  // cout << "end of constructor" << std::endl;
-  timer_ = this->create_wall_timer(20ms, std::bind(&Mono::timer_callback, this));
 }
 
 Mono::~Mono()
@@ -78,12 +57,14 @@ void Mono::load_params()
   declare_parameter("settings_file", rclcpp::ParameterValue(std::string("file_not_set")));
   declare_parameter("use_viewer", rclcpp::ParameterValue(true));
   declare_parameter("scale_factor", rclcpp::ParameterValue(1.0));
+  declare_parameter("image_topic", rclcpp::ParameterValue(std::string("/camera/image_raw")));
 
   get_parameter("map_frame_id", map_frame_id_param);
   get_parameter("target_frame_id", target_frame_id_param);
   get_parameter("camera_frame_id", camera_frame_id_param);
   get_parameter("voc_file", voc_file_name_param);
   get_parameter("settings_file", settings_file_name_param);
+  get_parameter("image_topic", image_topic_param);
   get_parameter("use_viewer", use_viewer_param);
   scale_factor_param = get_parameter("scale_factor").as_double();
 
@@ -125,11 +106,6 @@ void Mono::topic_callback(const sensor_msgs::msg::Image::ConstSharedPtr &image_m
   } else {
     sendTransform(current_transform, msg_time);
   }
-}
-
-void Mono::timer_callback()
-{
-  sendTransform(current_transform, this->get_clock()->now());
 }
 
 void Mono::publish_pose(Sophus::SE3f twc, rclcpp::Time msg_time) const

@@ -32,7 +32,6 @@ class Mono : public rclcpp::Node
     ~Mono();
 
   private:
-    void timer_callback();
     void load_params();
     void srv_callback(const std::shared_ptr<orb_slam_msgs::srv::ScaleFactor::Request> request,
           std::shared_ptr<orb_slam_msgs::srv::ScaleFactor::Response> response);
@@ -70,5 +69,6 @@ class Mono : public rclcpp::Node
     std::string target_frame_id_param;
     std::string voc_file_name_param;
     std::string settings_file_name_param;
+    std::string image_topic_param;
     bool use_viewer_param;
 };
