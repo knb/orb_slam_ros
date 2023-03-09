@@ -31,7 +31,8 @@ Mono::Mono() : rclcpp::Node("orb_slam_mono"), current_map_id(0)
 
   subscription = this->create_subscription<sensor_msgs::msg::Image>(
       image_topic_param, 10, std::bind(&Mono::topic_callback, this, _1));
-  tcw_publisher = create_publisher<geometry_msgs::msg::PoseStamped>("mono/tcw", 10);
+  // tcw_publisher = create_publisher<geometry_msgs::msg::PoseStamped>("mono/tcw", 10);
+  track_result_publisher = create_publisher<orb_slam_msgs::msg::TrackResult>("mono/track", 10);
 
   service = create_service<orb_slam_msgs::srv::ScaleFactor>("set_scale_factor",
         std::bind(&Mono::srv_callback, this, _1, _2));
@@ -110,20 +111,22 @@ void Mono::topic_callback(const sensor_msgs::msg::Image::ConstSharedPtr &image_m
 
 void Mono::publish_pose(Sophus::SE3f twc, rclcpp::Time msg_time) const
 {
-  geometry_msgs::msg::PoseStamped pose_msg;
-  pose_msg.header.frame_id = map_frame_id_param;
-  pose_msg.header.stamp = msg_time;
+  orb_slam_msgs::msg::TrackResult msg;
+  msg.header.frame_id = map_frame_id_param;
+  msg.header.stamp = msg_time;
 
-  pose_msg.pose.position.x = twc.translation().z();
-  pose_msg.pose.position.y = -twc.translation().x();
-  pose_msg.pose.position.z = -twc.translation().y();
+  msg.pose.position.x = twc.translation().z();
+  msg.pose.position.y = -twc.translation().x();
+  msg.pose.position.z = -twc.translation().y();
 
-  pose_msg.pose.orientation.w = twc.unit_quaternion().coeffs().w();
-  pose_msg.pose.orientation.x = twc.unit_quaternion().coeffs().z();
-  pose_msg.pose.orientation.y = -twc.unit_quaternion().coeffs().x();
-  pose_msg.pose.orientation.z = -twc.unit_quaternion().coeffs().y();
+  msg.pose.orientation.w = twc.unit_quaternion().coeffs().w();
+  msg.pose.orientation.x = twc.unit_quaternion().coeffs().z();
+  msg.pose.orientation.y = -twc.unit_quaternion().coeffs().x();
+  msg.pose.orientation.z = -twc.unit_quaternion().coeffs().y();
 
-  tcw_publisher->publish(pose_msg);
+  msg.map_id = current_map_id;
+
+  track_result_publisher->publish(msg);
 }
 
 void Mono::publish_tf_transform(Sophus::SE3f T_SE3f, rclcpp::Time msg_time)

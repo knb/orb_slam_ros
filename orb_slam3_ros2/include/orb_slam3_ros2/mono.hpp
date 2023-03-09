@@ -12,6 +12,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "cv_bridge/cv_bridge.h"
 #include "rclcpp/time.hpp"
+#include "orb_slam_msgs/msg/track_result.hpp"
 #include "orb_slam_msgs/srv/scale_factor.hpp"
 
 #include <tf2/convert.h>
@@ -49,7 +50,8 @@ class Mono : public rclcpp::Node
     std::shared_ptr<rclcpp::ParameterEventHandler> param_subscriber_;
     std::shared_ptr<rclcpp::ParameterCallbackHandle> param_cb_handle_;
 
-    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr tcw_publisher;
+    // rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr tcw_publisher;
+    rclcpp::Publisher<orb_slam_msgs::msg::TrackResult>::SharedPtr track_result_publisher;
     rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr subscription;
     std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener;
