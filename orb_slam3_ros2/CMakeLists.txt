@@ -16,6 +16,7 @@ find_package(rclcpp REQUIRED)
 # find_package(std_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(orb_slam_msgs REQUIRED)
+find_package(message_filters REQUIRED)
 # find_package(image_transport REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -69,13 +70,46 @@ ament_target_dependencies(orb_slam_mono
   tf2_ros
   tf2_geometry_msgs
   geometry_msgs
+  message_filters
   # sensor_msgs
   # nav_msgs
   # orb_slam3_interfaces
 )
 target_compile_features(orb_slam_mono PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
-install(TARGETS orb_slam_mono
+add_executable(orb_slam_stereo src/stereo.cpp)
+target_include_directories(orb_slam_stereo PUBLIC
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    ${EIGEN3_INCLUDE_DIR}
+    ${ORB_SLAM3_PATH}
+    ${ORB_SLAM3_PATH}/include
+    ${ORB_SLAM3_PATH}/include/CameraModels
+    ${ORB_SLAM3_PATH}/Thirdparty/g2o
+    ${ORB_SLAM3_PATH}/Thirdparty/Sophus
+)
+target_link_libraries(orb_slam_stereo
+  ${LIBS_ORBSLAM})
+ament_target_dependencies(orb_slam_stereo
+  rclcpp
+  # std_msgs
+  cv_bridge
+  orb_slam_msgs
+  # image_transport
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  geometry_msgs
+  message_filters
+  # sensor_msgs
+  # nav_msgs
+  # orb_slam3_interfaces
+)
+target_compile_features(orb_slam_stereo PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+
+
+install(TARGETS orb_slam_mono orb_slam_stereo
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
