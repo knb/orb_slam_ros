@@ -36,8 +36,8 @@ class Stereo : public rclcpp::Node
 
   private:
     void load_params();
-    void srv_callback(const std::shared_ptr<orb_slam_msgs::srv::ScaleFactor::Request> request,
-          std::shared_ptr<orb_slam_msgs::srv::ScaleFactor::Response> response);
+    // void srv_callback(const std::shared_ptr<orb_slam_msgs::srv::ScaleFactor::Request> request,
+    //       std::shared_ptr<orb_slam_msgs::srv::ScaleFactor::Response> response);
     void set_offset(std::string from_id, long unsigned int map_id);
     void topic_callback(const sensor_msgs::msg::Image::ConstSharedPtr & image_left_msg,
                         const sensor_msgs::msg::Image::ConstSharedPtr &image_right_msg);
@@ -50,8 +50,8 @@ class Stereo : public rclcpp::Node
 
     rclcpp::TimerBase::SharedPtr timer_;
 
-    std::shared_ptr<rclcpp::ParameterEventHandler> param_subscriber_;
-    std::shared_ptr<rclcpp::ParameterCallbackHandle> param_cb_handle_;
+    // std::shared_ptr<rclcpp::ParameterEventHandler> param_subscriber_;
+    // std::shared_ptr<rclcpp::ParameterCallbackHandle> param_cb_handle_;
 
     // rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr tcw_publisher;
     rclcpp::Publisher<orb_slam_msgs::msg::TrackResult>::SharedPtr track_result_publisher;
@@ -64,12 +64,12 @@ class Stereo : public rclcpp::Node
     std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener;
     std::shared_ptr<tf2_ros::Buffer> tf_buffer;
-    rclcpp::Service<orb_slam_msgs::srv::ScaleFactor>::SharedPtr service;
+    // rclcpp::Service<orb_slam_msgs::srv::ScaleFactor>::SharedPtr service;
 
     ORB_SLAM3::System * orb_slam;
     long unsigned int current_map_id;
     int tracking_state;
-    double scale_factor_param;
+    // double scale_factor_param;
 
     std::map<long unsigned int, tf2::Transform> tf_offsets;
     tf2::Transform current_transform;

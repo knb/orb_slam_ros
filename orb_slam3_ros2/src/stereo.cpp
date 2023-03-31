@@ -39,8 +39,8 @@ Stereo::Stereo() : rclcpp::Node("orb_slam_Stereo"), current_map_id(0)
   // subscription = this->create_subscription<sensor_msgs::msg::Image>(
   // image_topic_param, 10, std::bind(&Stereo::topic_callback, this, _1));
 
-  service = create_service<orb_slam_msgs::srv::ScaleFactor>("set_scale_factor",
-        std::bind(&Stereo::srv_callback, this, _1, _2));
+  // service = create_service<orb_slam_msgs::srv::ScaleFactor>("set_scale_factor",
+  //       std::bind(&Stereo::srv_callback, this, _1, _2));
 }
 
 Stereo::~Stereo()
@@ -62,7 +62,7 @@ void Stereo::load_params()
   declare_parameter("voc_file", rclcpp::ParameterValue(std::string("file_not_set")));
   declare_parameter("settings_file", rclcpp::ParameterValue(std::string("file_not_set")));
   declare_parameter("use_viewer", rclcpp::ParameterValue(true));
-  declare_parameter("scale_factor", rclcpp::ParameterValue(1.0));
+  // declare_parameter("scale_factor", rclcpp::ParameterValue(1.0));
   declare_parameter("image_left_topic", rclcpp::ParameterValue(std::string("/camera/image_left_raw")));
   declare_parameter("image_right_topic", rclcpp::ParameterValue(std::string("/camera/image_right_raw")));
 
@@ -74,19 +74,19 @@ void Stereo::load_params()
   get_parameter("image_left_topic", image_left_topic_param);
   get_parameter("image_right_topic", image_right_topic_param);
   get_parameter("use_viewer", use_viewer_param);
-  scale_factor_param = get_parameter("scale_factor").as_double();
+  // scale_factor_param = get_parameter("scale_factor").as_double();
 
   RCLCPP_INFO(get_logger(), "VOC: %s", voc_file_name_param.c_str());
   RCLCPP_INFO(get_logger(), "Settings: %s", settings_file_name_param.c_str());
 }
 
-void Stereo::srv_callback(const std::shared_ptr<orb_slam_msgs::srv::ScaleFactor::Request> request,
-      std::shared_ptr<orb_slam_msgs::srv::ScaleFactor::Response> response)
-{
-  response->responce = true;
-  scale_factor_param = request->scale_factor;
-  RCLCPP_INFO(get_logger(), "set scale factor: [%f]", request->scale_factor);
-}
+// void Stereo::srv_callback(const std::shared_ptr<orb_slam_msgs::srv::ScaleFactor::Request> request,
+//       std::shared_ptr<orb_slam_msgs::srv::ScaleFactor::Response> response)
+// {
+//   response->responce = true;
+//   scale_factor_param = request->scale_factor;
+//   RCLCPP_INFO(get_logger(), "set scale factor: [%f]", request->scale_factor);
+// }
 
 
 void Stereo::topic_callback(const sensor_msgs::msg::Image::ConstSharedPtr &image_left_msg,
@@ -145,8 +145,8 @@ void Stereo::publish_tf_transform(Sophus::SE3f T_SE3f, rclcpp::Time msg_time)
   // tf2::Transform tf_map2target;
 
   current_transform = TransformToTarget(tf_wc, camera_frame_id_param, target_frame_id_param);
-  // sendTransform(current_transform, msg_time);
-  sendTransform(current_transform, this->get_clock()->now());
+  sendTransform(current_transform, msg_time);
+  // sendTransform(current_transform, this->get_clock()->now());
 }
 
 void Stereo::sendTransform(tf2::Transform tf_map2target, rclcpp::Time msg_time) const
@@ -221,9 +221,14 @@ tf2::Transform Stereo::SE3f_to_tfTransform(Sophus::SE3f T_SE3f) const
   q_tf.setW(q_se3f.w());
 
   tf2::Vector3 t_tf(
-      t_vec(2) * scale_factor_param,
-      -t_vec(0) * scale_factor_param,
-      -t_vec(1) * scale_factor_param);
+      t_vec(2),
+      -t_vec(0),
+      -t_vec(1));
+
+  // tf2::Vector3 t_tf(
+  //     t_vec(2) * scale_factor_param,
+  //     -t_vec(0) * scale_factor_param,
+  //     -t_vec(1) * scale_factor_param);
 
   return tf2::Transform(q_tf, t_tf);
 }
