@@ -13,6 +13,7 @@ def generate_launch_description():
     # params_file = LaunchConfiguration('params_file')
     voc_file = LaunchConfiguration('voc_file')
     settings_file = LaunchConfiguration('settings_file')
+    publish_raw = LaunchConfiguration('publish_raw')
     use_viewer = LaunchConfiguration('use_viewer')
     target_frame_id = LaunchConfiguration('target_frame_id')
     image_left_topic = LaunchConfiguration('image_left_topic')
@@ -32,6 +33,11 @@ def generate_launch_description():
             'use_sim_time',
             default_value='false',
             description='Use simulation (Gazebo) clock if true'),
+
+        DeclareLaunchArgument(
+            'publish_raw',
+            default_value='false',
+            description='Publish only raw twc data'),
 
         DeclareLaunchArgument(
             'voc_file',
@@ -74,6 +80,7 @@ def generate_launch_description():
         Node(
             parameters=[
               {"voc_file": voc_file,
+               "publish_raw": publish_raw,
                "use_sim_time": use_sim_time,
                "settings_file": settings_file,
                "use_viewer": use_viewer,

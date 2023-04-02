@@ -42,6 +42,7 @@ class Stereo : public rclcpp::Node
     void topic_callback(const sensor_msgs::msg::Image::ConstSharedPtr & image_left_msg,
                         const sensor_msgs::msg::Image::ConstSharedPtr &image_right_msg);
     void publish_pose(Sophus::SE3f twc, rclcpp::Time msg_time) const;
+    void publish_twc(Sophus::SE3f twc, rclcpp::Time msg_time) const;
     void sendTransform(tf2::Transform trf, rclcpp::Time msg_time) const;
     tf2::Transform SE3f_to_tfTransform(Sophus::SE3f T_SE3f) const;
     void publish_tf_transform(Sophus::SE3f T_SE3f, rclcpp::Time msg_time);
@@ -53,7 +54,7 @@ class Stereo : public rclcpp::Node
     // std::shared_ptr<rclcpp::ParameterEventHandler> param_subscriber_;
     // std::shared_ptr<rclcpp::ParameterCallbackHandle> param_cb_handle_;
 
-    // rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr tcw_publisher;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr twc_publisher;
     rclcpp::Publisher<orb_slam_msgs::msg::TrackResult>::SharedPtr track_result_publisher;
 
     message_filters::Subscriber<sensor_msgs::msg::Image> subscriber_image_left;
@@ -82,4 +83,5 @@ class Stereo : public rclcpp::Node
     std::string image_left_topic_param;
     std::string image_right_topic_param;
     bool use_viewer_param;
+    bool publish_raw_param;
 };

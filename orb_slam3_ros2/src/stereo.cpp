@@ -14,7 +14,12 @@ Stereo::Stereo() : rclcpp::Node("orb_slam_Stereo"), current_map_id(0)
 
   tf_buffer = std::make_shared<tf2_ros::Buffer>(get_clock());
   tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
-  tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
+  if (!publish_raw_param) {
+    tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
+    track_result_publisher = create_publisher<orb_slam_msgs::msg::TrackResult>("stereo/track", 10);
+  } else {
+    twc_publisher = create_publisher<geometry_msgs::msg::PoseStamped>("stereo/tcw", 10);
+  }
 
   orb_slam = new ORB_SLAM3::System(
       voc_file_name_param,
@@ -22,16 +27,15 @@ Stereo::Stereo() : rclcpp::Node("orb_slam_Stereo"), current_map_id(0)
       ORB_SLAM3::System::STEREO,
       use_viewer_param);
 
-  set_offset(target_frame_id_param, current_map_id);
-  current_transform = tf_offsets[current_map_id];
-  current_transform = tf_offsets[current_map_id];
-
-  track_result_publisher = create_publisher<orb_slam_msgs::msg::TrackResult>("stereo/track", 10);
+  if (!publish_raw_param) {
+    set_offset(target_frame_id_param, current_map_id);
+    current_transform = tf_offsets[current_map_id];
+  }
 
   rclcpp::QoS qos(5);
   auto rmw_qos_profile = qos.get_rmw_qos_profile();
   subscriber_image_left.subscribe(this, image_left_topic_param, rmw_qos_profile);
-  subscriber_image_right.subscribe(this, image_right_topic_param, rmw_qos_profile);  
+  subscriber_image_right.subscribe(this, image_right_topic_param, rmw_qos_profile);
 
   image_sync = std::make_shared<message_filters::TimeSynchronizer<sensor_msgs::msg::Image, sensor_msgs::msg::Image>>(subscriber_image_left, subscriber_image_right, 5);
   image_sync->registerCallback(std::bind(&Stereo::topic_callback, this, std::placeholders::_1, std::placeholders::_2));
@@ -62,6 +66,7 @@ void Stereo::load_params()
   declare_parameter("voc_file", rclcpp::ParameterValue(std::string("file_not_set")));
   declare_parameter("settings_file", rclcpp::ParameterValue(std::string("file_not_set")));
   declare_parameter("use_viewer", rclcpp::ParameterValue(true));
+  declare_parameter("publish_raw", rclcpp::ParameterValue(false));
   // declare_parameter("scale_factor", rclcpp::ParameterValue(1.0));
   declare_parameter("image_left_topic", rclcpp::ParameterValue(std::string("/camera/image_left_raw")));
   declare_parameter("image_right_topic", rclcpp::ParameterValue(std::string("/camera/image_right_raw")));
@@ -74,10 +79,13 @@ void Stereo::load_params()
   get_parameter("image_left_topic", image_left_topic_param);
   get_parameter("image_right_topic", image_right_topic_param);
   get_parameter("use_viewer", use_viewer_param);
+  get_parameter("publish_raw", publish_raw_param);
   // scale_factor_param = get_parameter("scale_factor").as_double();
 
   RCLCPP_INFO(get_logger(), "VOC: %s", voc_file_name_param.c_str());
   RCLCPP_INFO(get_logger(), "Settings: %s", settings_file_name_param.c_str());
+  if (publish_raw_param)
+    RCLCPP_INFO(get_logger(), "Publish raw Twc");
 }
 
 // void Stereo::srv_callback(const std::shared_ptr<orb_slam_msgs::srv::ScaleFactor::Request> request,
@@ -112,9 +120,13 @@ void Stereo::topic_callback(const sensor_msgs::msg::Image::ConstSharedPtr &image
   if (tracking_state == ORB_SLAM3::Tracking::OK) {
     current_map_id = orb_slam->GetCurrentMapId();
     Sophus::SE3f twc = tcw.inverse();
-    publish_tf_transform(twc, msg_time);
-    publish_pose(twc, msg_time);
-  } else {
+    if (publish_raw_param) {
+      publish_twc(twc, msg_time);
+    } else {
+      publish_tf_transform(twc, msg_time);
+      publish_pose(twc, msg_time);
+    }
+  } else if (!publish_raw_param) {
     sendTransform(current_transform, msg_time);
   }
 }
@@ -137,6 +149,24 @@ void Stereo::publish_pose(Sophus::SE3f twc, rclcpp::Time msg_time) const
   msg.map_id = current_map_id;
 
   track_result_publisher->publish(msg);
+}
+
+void Stereo::publish_twc(Sophus::SE3f twc, rclcpp::Time msg_time) const
+{
+  geometry_msgs::msg::PoseStamped msg;
+  msg.header.frame_id = map_frame_id_param;
+  msg.header.stamp = msg_time;
+
+  msg.pose.position.x = twc.translation().x();
+  msg.pose.position.y = twc.translation().y();
+  msg.pose.position.z = twc.translation().z();
+
+  msg.pose.orientation.w = twc.unit_quaternion().coeffs().w();
+  msg.pose.orientation.x = twc.unit_quaternion().coeffs().x();
+  msg.pose.orientation.y = twc.unit_quaternion().coeffs().y();
+  msg.pose.orientation.z = twc.unit_quaternion().coeffs().z();
+
+  twc_publisher->publish(msg);
 }
 
 void Stereo::publish_tf_transform(Sophus::SE3f T_SE3f, rclcpp::Time msg_time)
