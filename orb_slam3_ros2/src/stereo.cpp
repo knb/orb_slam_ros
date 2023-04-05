@@ -8,7 +8,7 @@
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-Stereo::Stereo() : rclcpp::Node("orb_slam_Stereo"), current_map_id(0)
+Stereo::Stereo() : rclcpp::Node("orb_slam_Stereo"), current_map_id(0), has_transform(false)
 {
   load_params();
 
@@ -40,9 +40,8 @@ Stereo::Stereo() : rclcpp::Node("orb_slam_Stereo"), current_map_id(0)
   image_sync = std::make_shared<message_filters::TimeSynchronizer<sensor_msgs::msg::Image, sensor_msgs::msg::Image>>(subscriber_image_left, subscriber_image_right, 5);
   image_sync->registerCallback(std::bind(&Stereo::topic_callback, this, std::placeholders::_1, std::placeholders::_2));
 
-  // subscription = this->create_subscription<sensor_msgs::msg::Image>(
-  // image_topic_param, 10, std::bind(&Stereo::topic_callback, this, _1));
-
+  timer_ = this->create_wall_timer(
+    50ms, std::bind(&Stereo::timer_callback, this));  
   // service = create_service<orb_slam_msgs::srv::ScaleFactor>("set_scale_factor",
   //       std::bind(&Stereo::srv_callback, this, _1, _2));
 }
@@ -123,12 +122,16 @@ void Stereo::topic_callback(const sensor_msgs::msg::Image::ConstSharedPtr &image
     if (publish_raw_param) {
       publish_twc(twc, msg_time);
     } else {
-      publish_tf_transform(twc, msg_time);
+      update_tf_transform(twc, msg_time);
       publish_pose(twc, msg_time);
     }
-  } else if (!publish_raw_param) {
-    sendTransform(current_transform, msg_time);
   }
+}
+
+void Stereo::timer_callback() 
+{
+  if (!publish_raw_param && has_transform)
+    sendTransform(current_transform, this->get_clock()->now());
 }
 
 void Stereo::publish_pose(Sophus::SE3f twc, rclcpp::Time msg_time) const
@@ -169,13 +172,14 @@ void Stereo::publish_twc(Sophus::SE3f twc, rclcpp::Time msg_time) const
   twc_publisher->publish(msg);
 }
 
-void Stereo::publish_tf_transform(Sophus::SE3f T_SE3f, rclcpp::Time msg_time)
+void Stereo::update_tf_transform(Sophus::SE3f T_SE3f, rclcpp::Time msg_time)
 {
   tf2::Transform tf_wc = SE3f_to_tfTransform(T_SE3f);
   // tf2::Transform tf_map2target;
 
   current_transform = TransformToTarget(tf_wc, camera_frame_id_param, target_frame_id_param);
-  sendTransform(current_transform, msg_time);
+  has_transform = true;
+  // sendTransform(current_transform, msg_time);
   // sendTransform(current_transform, this->get_clock()->now());
 }
 

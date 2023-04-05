@@ -45,9 +45,10 @@ class Stereo : public rclcpp::Node
     void publish_twc(Sophus::SE3f twc, rclcpp::Time msg_time) const;
     void sendTransform(tf2::Transform trf, rclcpp::Time msg_time) const;
     tf2::Transform SE3f_to_tfTransform(Sophus::SE3f T_SE3f) const;
-    void publish_tf_transform(Sophus::SE3f T_SE3f, rclcpp::Time msg_time);
+    void update_tf_transform(Sophus::SE3f T_SE3f, rclcpp::Time msg_time);
     tf2::Transform TransformToTarget (tf2::Transform tf_in,
                                       std::string frame_in, std::string frame_target);
+    void timer_callback();
 
     rclcpp::TimerBase::SharedPtr timer_;
 
@@ -84,4 +85,6 @@ class Stereo : public rclcpp::Node
     std::string image_right_topic_param;
     bool use_viewer_param;
     bool publish_raw_param;
+
+    bool has_transform;
 };
