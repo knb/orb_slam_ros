@@ -38,7 +38,7 @@ class Stereo : public rclcpp::Node
     void load_params();
     // void srv_callback(const std::shared_ptr<orb_slam_msgs::srv::ScaleFactor::Request> request,
     //       std::shared_ptr<orb_slam_msgs::srv::ScaleFactor::Response> response);
-    void set_offset(std::string from_id, long unsigned int map_id);
+    void set_offset(tf2::Transform tf_in, std::string from_id, long unsigned int map_id);
     void topic_callback(const sensor_msgs::msg::Image::ConstSharedPtr & image_left_msg,
                         const sensor_msgs::msg::Image::ConstSharedPtr &image_right_msg);
     void publish_pose(Sophus::SE3f twc, rclcpp::Time msg_time) const;

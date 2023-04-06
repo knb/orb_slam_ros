@@ -198,13 +198,13 @@ void Stereo::sendTransform(tf2::Transform tf_map2target, rclcpp::Time msg_time) 
   tf_broadcaster->sendTransform(tf_msg);
 }
 
-void Stereo::set_offset(std::string from_id, long unsigned int map_id)
+void Stereo::set_offset(tf2::Transform tf_in, std::string map_frame_id, long unsigned int map_id)
 {
   tf2::Transform tf0;
   try
   {
     // Get the transform from target to camera
-    geometry_msgs::msg::TransformStamped tf_msg = tf_buffer->lookupTransform(from_id, camera_frame_id_param, tf2::TimePointZero);
+    geometry_msgs::msg::TransformStamped tf_msg = tf_buffer->lookupTransform(camera_frame_id_param, map_frame_id, tf2::TimePointZero);
     tf2::fromMsg(tf_msg.transform, tf0);
     RCLCPP_INFO(this->get_logger(), "set offset");
   }
@@ -213,7 +213,7 @@ void Stereo::set_offset(std::string from_id, long unsigned int map_id)
     RCLCPP_INFO(this->get_logger(), "set offset error %s", ex.what());
     tf0.setIdentity();
   }
-  tf_offsets[map_id] = tf0;
+  tf_offsets[map_id] = (tf_in * tf0).inverse();
 }
 
 tf2::Transform Stereo::TransformToTarget(tf2::Transform tf_in,
