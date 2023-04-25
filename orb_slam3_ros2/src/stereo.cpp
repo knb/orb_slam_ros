@@ -28,7 +28,7 @@ Stereo::Stereo() : rclcpp::Node("orb_slam_Stereo"), current_map_id(0), has_trans
       use_viewer_param);
 
   if (!publish_raw_param) {
-    set_offset(target_frame_id_param, current_map_id);
+    set_offset(tf2::Transform(tf2::Quaternion::getIdentity()), target_frame_id_param, current_map_id);
     current_transform = tf_offsets[current_map_id];
   }
 
@@ -225,7 +225,7 @@ tf2::Transform Stereo::TransformToTarget(tf2::Transform tf_in,
   {
     auto itr = tf_offsets.find(current_map_id);
     if (itr == tf_offsets.end()) {
-      set_offset(map_frame_id_param, current_map_id);
+      set_offset(tf_in, map_frame_id_param, current_map_id);
     }
     // Get the transform from camera to target
     geometry_msgs::msg::TransformStamped tf_msg = tf_buffer->lookupTransform(frame_in, frame_target, tf2::TimePointZero);
