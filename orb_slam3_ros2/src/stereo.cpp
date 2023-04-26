@@ -8,7 +8,8 @@
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-Stereo::Stereo() : rclcpp::Node("orb_slam_Stereo"), current_map_id(0), has_transform(false)
+Stereo::Stereo() : rclcpp::Node("orb_slam_Stereo"),
+                   current_map_id(0), pre_map_id(0), has_transform(false)
 {
   load_params();
 
@@ -28,7 +29,10 @@ Stereo::Stereo() : rclcpp::Node("orb_slam_Stereo"), current_map_id(0), has_trans
       use_viewer_param);
 
   if (!publish_raw_param) {
-    set_offset(tf2::Transform(tf2::Quaternion::getIdentity()), target_frame_id_param, current_map_id);
+    tf2::Transform tf0;
+    tf0.setIdentity();
+    tf_offsets[current_map_id] = tf0;
+    // set_offset(tf2::Transform(tf2::Quaternion::getIdentity()), target_frame_id_param, current_map_id);
     current_transform = tf_offsets[current_map_id];
   }
 
@@ -223,8 +227,9 @@ tf2::Transform Stereo::TransformToTarget(tf2::Transform tf_in,
   tf2::Transform tf_map2target;
   try
   {
-    auto itr = tf_offsets.find(current_map_id);
-    if (itr == tf_offsets.end()) {
+    // auto itr = tf_offsets.find(current_map_id);
+    // if (itr == tf_offsets.end()) {
+    if (current_map_id != pre_map_id) {
       set_offset(tf_in, map_frame_id_param, current_map_id);
     }
     // Get the transform from camera to target

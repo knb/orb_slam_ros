@@ -70,6 +70,7 @@ class Stereo : public rclcpp::Node
 
     ORB_SLAM3::System * orb_slam;
     long unsigned int current_map_id;
+    long unsigned int pre_map_id;
     int tracking_state;
     // double scale_factor_param;
 
