@@ -210,7 +210,7 @@ void Stereo::set_offset(tf2::Transform tf_in, std::string map_frame_id, long uns
     // Get the transform from target to camera
     geometry_msgs::msg::TransformStamped tf_msg = tf_buffer->lookupTransform(camera_frame_id_param, map_frame_id, tf2::TimePointZero);
     tf2::fromMsg(tf_msg.transform, tf0);
-    RCLCPP_INFO(this->get_logger(), "set offset");
+    RCLCPP_INFO(this->get_logger(), "set offset: map id: %d", map_id);
   }
   catch (tf2::TransformException &ex)
   {
@@ -231,6 +231,7 @@ tf2::Transform Stereo::TransformToTarget(tf2::Transform tf_in,
     // if (itr == tf_offsets.end()) {
     if (current_map_id != pre_map_id) {
       set_offset(tf_in, map_frame_id_param, current_map_id);
+      pre_map_id = current_map_id;
     }
     // Get the transform from camera to target
     geometry_msgs::msg::TransformStamped tf_msg = tf_buffer->lookupTransform(frame_in, frame_target, tf2::TimePointZero);
