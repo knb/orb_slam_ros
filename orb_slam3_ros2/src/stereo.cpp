@@ -16,10 +16,12 @@ Stereo::Stereo() : rclcpp::Node("orb_slam_Stereo"),
   tf_buffer = std::make_shared<tf2_ros::Buffer>(get_clock());
   tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
   if (!publish_raw_param) {
-    tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
+    if (publish_tf_param)
+      tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
     track_result_publisher = create_publisher<orb_slam_msgs::msg::TrackResult>("stereo/track", 10);
+    odom_publisher = create_publisher<nav_msgs::msg::Odometry>("stereo/odom", 10);
   } else {
-    twc_publisher = create_publisher<geometry_msgs::msg::PoseStamped>("stereo/tcw", 10);
+    twc_publisher = create_publisher<geometry_msgs::msg::PoseStamped>("stereo/twc", 10);
   }
 
   orb_slam = new ORB_SLAM3::System(
@@ -28,7 +30,7 @@ Stereo::Stereo() : rclcpp::Node("orb_slam_Stereo"),
       ORB_SLAM3::System::STEREO,
       use_viewer_param);
 
-  if (!publish_raw_param) {
+  if (!publish_raw_param && publish_tf_param) {
     tf2::Transform tf0;
     tf0.setIdentity();
     tf_offsets[current_map_id] = tf0;
@@ -44,8 +46,10 @@ Stereo::Stereo() : rclcpp::Node("orb_slam_Stereo"),
   image_sync = std::make_shared<message_filters::TimeSynchronizer<sensor_msgs::msg::Image, sensor_msgs::msg::Image>>(subscriber_image_left, subscriber_image_right, 5);
   image_sync->registerCallback(std::bind(&Stereo::topic_callback, this, std::placeholders::_1, std::placeholders::_2));
 
-  timer_ = this->create_wall_timer(
-    50ms, std::bind(&Stereo::timer_callback, this));  
+  if (publish_tf_param) {
+    timer_ = this->create_wall_timer(
+      50ms, std::bind(&Stereo::timer_callback, this));  
+  }
   // service = create_service<orb_slam_msgs::srv::ScaleFactor>("set_scale_factor",
   //       std::bind(&Stereo::srv_callback, this, _1, _2));
 }
@@ -65,11 +69,13 @@ void Stereo::load_params()
 {
   declare_parameter("map_frame_id", rclcpp::ParameterValue(std::string("map")));
   declare_parameter("target_frame_id", rclcpp::ParameterValue(std::string("odom")));
+  declare_parameter("base_frame_id", rclcpp::ParameterValue(std::string("base_footprint")));
   declare_parameter("camera_frame_id", rclcpp::ParameterValue(std::string("camera_link")));
   declare_parameter("voc_file", rclcpp::ParameterValue(std::string("file_not_set")));
   declare_parameter("settings_file", rclcpp::ParameterValue(std::string("file_not_set")));
   declare_parameter("use_viewer", rclcpp::ParameterValue(true));
   declare_parameter("publish_raw", rclcpp::ParameterValue(false));
+  declare_parameter("publish_tf", rclcpp::ParameterValue(false));
   // declare_parameter("scale_factor", rclcpp::ParameterValue(1.0));
   declare_parameter("image_left_topic", rclcpp::ParameterValue(std::string("/camera/image_left_raw")));
   declare_parameter("image_right_topic", rclcpp::ParameterValue(std::string("/camera/image_right_raw")));
@@ -77,18 +83,24 @@ void Stereo::load_params()
   get_parameter("map_frame_id", map_frame_id_param);
   get_parameter("target_frame_id", target_frame_id_param);
   get_parameter("camera_frame_id", camera_frame_id_param);
+  get_parameter("base_frame_id", base_frame_id_param);
   get_parameter("voc_file", voc_file_name_param);
   get_parameter("settings_file", settings_file_name_param);
   get_parameter("image_left_topic", image_left_topic_param);
   get_parameter("image_right_topic", image_right_topic_param);
   get_parameter("use_viewer", use_viewer_param);
   get_parameter("publish_raw", publish_raw_param);
+  get_parameter("publish_tf", publish_tf_param);
   // scale_factor_param = get_parameter("scale_factor").as_double();
 
   RCLCPP_INFO(get_logger(), "VOC: %s", voc_file_name_param.c_str());
   RCLCPP_INFO(get_logger(), "Settings: %s", settings_file_name_param.c_str());
   if (publish_raw_param)
     RCLCPP_INFO(get_logger(), "Publish raw Twc");
+  if (publish_tf_param)
+    RCLCPP_INFO(get_logger(), "Publish TF");
+  else
+    RCLCPP_INFO(get_logger(), "Publish stereo/odom");
 }
 
 // void Stereo::srv_callback(const std::shared_ptr<orb_slam_msgs::srv::ScaleFactor::Request> request,
@@ -125,9 +137,11 @@ void Stereo::topic_callback(const sensor_msgs::msg::Image::ConstSharedPtr &image
     Sophus::SE3f twc = tcw.inverse();
     if (publish_raw_param) {
       publish_twc(twc, msg_time);
-    } else {
+    } else if (publish_tf_param) {
       update_tf_transform(twc, msg_time);
       publish_pose(twc, msg_time);
+    } else {
+      publish_odom(twc, msg_time);
     }
   }
 }
@@ -187,6 +201,40 @@ void Stereo::update_tf_transform(Sophus::SE3f T_SE3f, rclcpp::Time msg_time)
   // sendTransform(current_transform, this->get_clock()->now());
 }
 
+void Stereo::publish_odom(Sophus::SE3f twc, rclcpp::Time msg_time) const
+{
+  Eigen::Quaternion<float> const q_se3f = twc.unit_quaternion();
+  Eigen::Vector3f t_vec = twc.translation();
+
+  tf2::Quaternion q_tf;
+  q_tf.setX(q_se3f.z());
+  q_tf.setY(-q_se3f.x());
+  q_tf.setZ(-q_se3f.y());
+  q_tf.setW(q_se3f.w());
+
+  tf2::Vector3 t_tf(
+      t_vec(2),
+      -t_vec(0),
+      -t_vec(1));
+
+
+  nav_msgs::msg::Odometry odom;
+
+  odom.header.stamp = msg_time;
+  odom.header.frame_id = "odom";
+  odom.child_frame_id = base_frame_id_param;
+
+  odom.pose.pose.position.x = t_vec(2);
+  odom.pose.pose.position.y = -t_vec(0);
+  odom.pose.pose.position.z = -t_vec(1);
+  odom.pose.pose.orientation.w = q_se3f.w();
+  odom.pose.pose.orientation.x = q_se3f.z();
+  odom.pose.pose.orientation.y = -q_se3f.x();
+  odom.pose.pose.orientation.z = -q_se3f.y();
+
+  odom_publisher->publish(odom);
+}
+
 void Stereo::sendTransform(tf2::Transform tf_map2target, rclcpp::Time msg_time) const
 {
   std_msgs::msg::Header header;
@@ -210,7 +258,7 @@ void Stereo::set_offset(tf2::Transform tf_in, std::string map_frame_id, long uns
     // Get the transform from target to camera
     geometry_msgs::msg::TransformStamped tf_msg = tf_buffer->lookupTransform(camera_frame_id_param, map_frame_id, tf2::TimePointZero);
     tf2::fromMsg(tf_msg.transform, tf0);
-    RCLCPP_INFO(this->get_logger(), "set offset: map id: %d", map_id);
+    RCLCPP_INFO(this->get_logger(), "set offset: map id: %ld", map_id);
   }
   catch (tf2::TransformException &ex)
   {

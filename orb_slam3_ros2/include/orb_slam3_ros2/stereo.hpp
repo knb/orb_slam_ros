@@ -10,6 +10,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/image.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "cv_bridge/cv_bridge.h"
 #include "rclcpp/time.hpp"
 #include "orb_slam_msgs/msg/track_result.hpp"
@@ -42,6 +43,7 @@ class Stereo : public rclcpp::Node
     void topic_callback(const sensor_msgs::msg::Image::ConstSharedPtr & image_left_msg,
                         const sensor_msgs::msg::Image::ConstSharedPtr &image_right_msg);
     void publish_pose(Sophus::SE3f twc, rclcpp::Time msg_time) const;
+    void publish_odom(Sophus::SE3f twc, rclcpp::Time msg_time) const;
     void publish_twc(Sophus::SE3f twc, rclcpp::Time msg_time) const;
     void sendTransform(tf2::Transform trf, rclcpp::Time msg_time) const;
     tf2::Transform SE3f_to_tfTransform(Sophus::SE3f T_SE3f) const;
@@ -56,6 +58,7 @@ class Stereo : public rclcpp::Node
     // std::shared_ptr<rclcpp::ParameterCallbackHandle> param_cb_handle_;
 
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr twc_publisher;
+    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_publisher;
     rclcpp::Publisher<orb_slam_msgs::msg::TrackResult>::SharedPtr track_result_publisher;
 
     message_filters::Subscriber<sensor_msgs::msg::Image> subscriber_image_left;
@@ -80,12 +83,14 @@ class Stereo : public rclcpp::Node
     std::string map_frame_id_param;
     std::string camera_frame_id_param;
     std::string target_frame_id_param;
+    std::string base_frame_id_param;
     std::string voc_file_name_param;
     std::string settings_file_name_param;
     std::string image_left_topic_param;
     std::string image_right_topic_param;
     bool use_viewer_param;
     bool publish_raw_param;
+    bool publish_tf_param;
 
     bool has_transform;
 };

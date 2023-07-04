@@ -14,6 +14,7 @@ def generate_launch_description():
     voc_file = LaunchConfiguration('voc_file')
     settings_file = LaunchConfiguration('settings_file')
     publish_raw = LaunchConfiguration('publish_raw')
+    publish_tf = LaunchConfiguration('publish_tf')
     use_viewer = LaunchConfiguration('use_viewer')
     target_frame_id = LaunchConfiguration('target_frame_id')
     image_left_topic = LaunchConfiguration('image_left_topic')
@@ -38,6 +39,11 @@ def generate_launch_description():
             'publish_raw',
             default_value='false',
             description='Publish only raw twc data'),
+
+        DeclareLaunchArgument(
+            'publish_tf',
+            default_value='false',
+            description='Publish Tf'),
 
         DeclareLaunchArgument(
             'voc_file',
@@ -81,6 +87,7 @@ def generate_launch_description():
             parameters=[
               {"voc_file": voc_file,
                "publish_raw": publish_raw,
+               "publish_tf": publish_tf,
                "use_sim_time": use_sim_time,
                "settings_file": settings_file,
                "use_viewer": use_viewer,

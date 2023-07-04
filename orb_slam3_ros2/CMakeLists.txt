@@ -27,7 +27,7 @@ find_package(OpenCV 4.0 REQUIRED)
 find_package(Pangolin REQUIRED)
 find_package(GLEW QUIET)
 # find_package(sensor_msgs REQUIRED)
-# find_package(nav_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 
 set(INCLUDE_DIRS_ORBSLAM
     ${EIGEN3_INCLUDE_DIR}
@@ -45,6 +45,27 @@ set(LIBS_ORBSLAM
   ${ORB_SLAM3_PATH}/lib/libORB_SLAM3.so
   ${ORB_SLAM3_PATH}/Thirdparty/DBoW2/lib/libDBoW2.so
   ${ORB_SLAM3_PATH}/Thirdparty/g2o/lib/libg2o.so)
+
+# add_executable(orb_odom src/orb_odom)
+# ament_target_dependencies(orb_odom
+#   rclcpp
+#   orb_slam_msgs
+#   tf2
+#   tf2_ros
+#   tf2_geometry_msgs
+#   geometry_msgs
+#   nav_msgs
+# )
+
+add_executable(orb_map_tf src/map_tf.cpp)
+ament_target_dependencies(orb_map_tf
+  rclcpp
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  geometry_msgs
+  nav_msgs
+)
 
 add_executable(orb_slam_mono src/mono.cpp)
 target_include_directories(orb_slam_mono PUBLIC
@@ -72,7 +93,7 @@ ament_target_dependencies(orb_slam_mono
   geometry_msgs
   message_filters
   # sensor_msgs
-  # nav_msgs
+  nav_msgs
   # orb_slam3_interfaces
 )
 target_compile_features(orb_slam_mono PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
@@ -103,13 +124,13 @@ ament_target_dependencies(orb_slam_stereo
   geometry_msgs
   message_filters
   # sensor_msgs
-  # nav_msgs
+  nav_msgs
   # orb_slam3_interfaces
 )
 target_compile_features(orb_slam_stereo PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
 
-install(TARGETS orb_slam_mono orb_slam_stereo
+install(TARGETS orb_slam_mono orb_slam_stereo orb_map_tf
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
