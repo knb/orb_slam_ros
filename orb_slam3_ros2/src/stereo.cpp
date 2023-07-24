@@ -221,8 +221,8 @@ void Stereo::publish_odom(Sophus::SE3f twc, rclcpp::Time msg_time) const
   nav_msgs::msg::Odometry odom;
 
   odom.header.stamp = msg_time;
-  odom.header.frame_id = "odom";
-  odom.child_frame_id = base_frame_id_param;
+  odom.header.frame_id = "map";
+  odom.child_frame_id = camera_frame_id_param; // base_frame_id_param;
 
   odom.pose.pose.position.x = t_vec(2);
   odom.pose.pose.position.y = -t_vec(0);

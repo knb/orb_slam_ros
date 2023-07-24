@@ -31,7 +31,7 @@ public:
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
     subscription_ = this->create_subscription<nav_msgs::msg::Odometry>(
-      "orb/odom", 10,
+      "stereo/odom", 10,
       std::bind(&OrbMapTf::handle_odometry, this, std::placeholders::_1));
   }
 
