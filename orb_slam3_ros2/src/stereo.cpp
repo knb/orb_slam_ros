@@ -31,10 +31,10 @@ Stereo::Stereo() : rclcpp::Node("orb_slam_Stereo"),
       use_viewer_param);
 
   if (!publish_raw_param && publish_tf_param) {
-    tf2::Transform tf0;
-    tf0.setIdentity();
-    tf_offsets[current_map_id] = tf0;
-    // set_offset(tf2::Transform(tf2::Quaternion::getIdentity()), target_frame_id_param, current_map_id);
+    // tf2::Transform tf0;
+    // tf0.setIdentity();
+    // tf_offsets[current_map_id] = tf0;
+    set_offset(tf2::Transform(tf2::Quaternion::getIdentity()), base_frame_id_param, current_map_id);
     current_transform = tf_offsets[current_map_id];
   }
 
@@ -265,7 +265,7 @@ void Stereo::set_offset(tf2::Transform tf_in, std::string map_frame_id, long uns
     RCLCPP_INFO(this->get_logger(), "set offset error %s", ex.what());
     tf0.setIdentity();
   }
-  tf_offsets[map_id] = (tf_in * tf0).inverse();
+  tf_offsets[map_id] = tf0 * tf_in.inverse();
 }
 
 tf2::Transform Stereo::TransformToTarget(tf2::Transform tf_in,
@@ -275,9 +275,9 @@ tf2::Transform Stereo::TransformToTarget(tf2::Transform tf_in,
   tf2::Transform tf_map2target;
   try
   {
-    // auto itr = tf_offsets.find(current_map_id);
-    // if (itr == tf_offsets.end()) {
-    if (current_map_id != pre_map_id) {
+    auto itr = tf_offsets.find(current_map_id);
+    if (itr == tf_offsets.end()) {
+      // if (current_map_id != pre_map_id) {
       set_offset(tf_in, map_frame_id_param, current_map_id);
       pre_map_id = current_map_id;
     }
