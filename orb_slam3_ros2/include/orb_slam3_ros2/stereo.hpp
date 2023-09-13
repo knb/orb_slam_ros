@@ -49,7 +49,7 @@ class Stereo : public rclcpp::Node
     tf2::Transform SE3f_to_tfTransform(Sophus::SE3f T_SE3f) const;
     void update_tf_transform(Sophus::SE3f T_SE3f, rclcpp::Time msg_time);
     tf2::Transform TransformToTarget (tf2::Transform tf_in,
-                                      std::string frame_in, std::string frame_target);
+                                      std::string frame_in, std::string frame_target, rclcpp::Time msg_time);
     void timer_callback();
 
     rclcpp::TimerBase::SharedPtr timer_;
