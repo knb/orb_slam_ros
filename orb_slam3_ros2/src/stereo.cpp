@@ -195,7 +195,7 @@ void Stereo::update_tf_transform(Sophus::SE3f T_SE3f, rclcpp::Time msg_time)
   tf2::Transform tf_wc = SE3f_to_tfTransform(T_SE3f);
   // tf2::Transform tf_map2target;
 
-  current_transform = TransformToTarget(tf_wc, camera_frame_id_param, target_frame_id_param);
+  current_transform = TransformToTarget(tf_wc, camera_frame_id_param, target_frame_id_param, msg_time);
   has_transform = true;
   // sendTransform(current_transform, msg_time);
   // sendTransform(current_transform, this->get_clock()->now());
@@ -256,29 +256,32 @@ void Stereo::set_offset(tf2::Transform tf_in, std::string map_frame_id, long uns
   try
   {
     // Get the transform from target to camera
-    geometry_msgs::msg::TransformStamped tf_msg = tf_buffer->lookupTransform(camera_frame_id_param, map_frame_id, tf2::TimePointZero);
+    geometry_msgs::msg::TransformStamped tf_msg = tf_buffer->lookupTransform(map_frame_id, camera_frame_id_param, tf2::TimePointZero);
     tf2::fromMsg(tf_msg.transform, tf0);
-    RCLCPP_INFO(this->get_logger(), "set offset: map id: %ld", map_id);
+    RCLCPP_INFO(this->get_logger(), "set offset: map id: %ld, m: %s, c: %s", map_id, map_frame_id.c_str(), camera_frame_id_param.c_str());
   }
   catch (tf2::TransformException &ex)
   {
-    RCLCPP_INFO(this->get_logger(), "set offset error %s", ex.what());
+    RCLCPP_INFO(this->get_logger(), "set offset tf error %s", ex.what());
     tf0.setIdentity();
   }
   tf_offsets[map_id] = tf0 * tf_in.inverse();
 }
 
 tf2::Transform Stereo::TransformToTarget(tf2::Transform tf_in,
-                                       std::string frame_in, std::string frame_target)
+                                       std::string frame_in, std::string frame_target, rclcpp::Time msg_time)
 {
   tf2::Transform tf_orig2target;
   tf2::Transform tf_map2target;
   try
   {
-    auto itr = tf_offsets.find(current_map_id);
-    if (itr == tf_offsets.end()) {
-      // if (current_map_id != pre_map_id) {
-      set_offset(tf_in, map_frame_id_param, current_map_id);
+    if (current_map_id != pre_map_id) {
+      RCLCPP_INFO(this->get_logger(), "map changed: %ld to %ld", pre_map_id, current_map_id);
+      auto itr = tf_offsets.find(current_map_id);
+      if (itr == tf_offsets.end()) {
+        // tf2::TimePoint t = tf2_ros::fromMsg((builtin_interfaces::msg::Time)msg_time);
+        set_offset(tf_in, map_frame_id_param, current_map_id);
+      }
       pre_map_id = current_map_id;
     }
     // Get the transform from camera to target
