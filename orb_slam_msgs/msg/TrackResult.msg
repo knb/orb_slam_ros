@@ -8,4 +8,4 @@ std_msgs/Header header
 geometry_msgs/Pose pose
 
 # Map ID
-uint64 map_id
+int    map_id
