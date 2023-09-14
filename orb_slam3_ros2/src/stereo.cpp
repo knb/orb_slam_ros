@@ -275,15 +275,19 @@ tf2::Transform Stereo::TransformToTarget(tf2::Transform tf_in,
   tf2::Transform tf_map2target;
   try
   {
-    if (current_map_id != pre_map_id) {
-      RCLCPP_INFO(this->get_logger(), "map changed: %ld to %ld", pre_map_id, current_map_id);
-      auto itr = tf_offsets.find(current_map_id);
-      if (itr == tf_offsets.end()) {
-        // tf2::TimePoint t = tf2_ros::fromMsg((builtin_interfaces::msg::Time)msg_time);
-        set_offset(tf_in, map_frame_id_param, current_map_id);
-      }
-      pre_map_id = current_map_id;
+    if (orb_slam->MapChanged()) {
+      RCLCPP_INFO(this->get_logger(), "map changed map_id: %ld", current_map_id);
+      // set_offset(tf_in, map_frame_id_param, current_map_id);
     }
+    // if (current_map_id != pre_map_id) {
+    //   RCLCPP_INFO(this->get_logger(), "map changed: %ld to %ld", pre_map_id, current_map_id);
+    //   auto itr = tf_offsets.find(current_map_id);
+    //   if (itr == tf_offsets.end()) {
+    //     // tf2::TimePoint t = tf2_ros::fromMsg((builtin_interfaces::msg::Time)msg_time);
+    //     set_offset(tf_in, map_frame_id_param, current_map_id);
+    //   }
+    //   pre_map_id = current_map_id;
+    // }
     // Get the transform from camera to target
     geometry_msgs::msg::TransformStamped tf_msg = tf_buffer->lookupTransform(frame_in, frame_target, tf2::TimePointZero);
     // Convert to tf2
@@ -295,7 +299,8 @@ tf2::Transform Stereo::TransformToTarget(tf2::Transform tf_in,
     tf_orig2target.setIdentity();
   }
   // Transform from map to target
-  tf2::Transform offset = tf_offsets.at(current_map_id);
+  // tf2::Transform offset = tf_offsets.at(current_map_id);
+  tf2::Transform offset = tf_offsets.at(0);
   tf_map2target = offset * tf_in * tf_orig2target;
   return tf_map2target;
 }
