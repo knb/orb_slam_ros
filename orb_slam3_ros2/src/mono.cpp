@@ -100,7 +100,7 @@ void Mono::topic_callback(const sensor_msgs::msg::Image::ConstSharedPtr &image_m
   Sophus::SE3f tcw = orb_slam->TrackMonocular(cv_in_ptr->image, msg_time.seconds());
   tracking_state = orb_slam->GetTrackingState();
   if (tracking_state == ORB_SLAM3::Tracking::OK) {
-    current_map_id = orb_slam->GetCurrentMapId();
+    current_map_id = 0; //orb_slam->GetCurrentMapId();
     Sophus::SE3f twc = tcw.inverse();
     publish_tf_transform(twc, msg_time);
     publish_pose(twc, msg_time);

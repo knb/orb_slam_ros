@@ -133,7 +133,7 @@ void Stereo::topic_callback(const sensor_msgs::msg::Image::ConstSharedPtr &image
   Sophus::SE3f tcw = orb_slam->TrackStereo(cv_left_in_ptr->image, cv_right_in_ptr->image, msg_time.seconds());
   tracking_state = orb_slam->GetTrackingState();
   if (tracking_state == ORB_SLAM3::Tracking::OK) {
-    current_map_id = orb_slam->GetCurrentMapId();
+    current_map_id = 0; //orb_slam->GetCurrentMapId();
     Sophus::SE3f twc = tcw.inverse();
     if (publish_raw_param) {
       publish_twc(twc, msg_time);
