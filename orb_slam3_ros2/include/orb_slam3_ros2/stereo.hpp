@@ -90,6 +90,7 @@ class Stereo : public rclcpp::Node
     std::string image_right_topic_param;
     bool use_viewer_param;
     bool publish_raw_param;
+    bool publish_odom_param;
     bool publish_tf_param;
 
     bool has_transform;

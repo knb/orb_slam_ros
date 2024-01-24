@@ -15,13 +15,16 @@ Stereo::Stereo() : rclcpp::Node("orb_slam_Stereo"),
 
   tf_buffer = std::make_shared<tf2_ros::Buffer>(get_clock());
   tf_listener = std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
+  if (publish_tf_param)
+    tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
   if (!publish_raw_param) {
-    if (publish_tf_param)
-      tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
     track_result_publisher = create_publisher<orb_slam_msgs::msg::TrackResult>("stereo/track", 10);
-    odom_publisher = create_publisher<nav_msgs::msg::Odometry>("stereo/odom", 10);
   } else {
     twc_publisher = create_publisher<geometry_msgs::msg::PoseStamped>("stereo/twc", 10);
+  }
+
+  if (publish_odom_param) {
+    odom_publisher = create_publisher<nav_msgs::msg::Odometry>("stereo/odom", 10);
   }
 
   orb_slam = new ORB_SLAM3::System(
@@ -73,8 +76,9 @@ void Stereo::load_params()
   declare_parameter("camera_frame_id", rclcpp::ParameterValue(std::string("camera_link")));
   declare_parameter("voc_file", rclcpp::ParameterValue(std::string("file_not_set")));
   declare_parameter("settings_file", rclcpp::ParameterValue(std::string("file_not_set")));
-  declare_parameter("use_viewer", rclcpp::ParameterValue(true));
+  declare_parameter("use_viewer", rclcpp::ParameterValue(false));
   declare_parameter("publish_raw", rclcpp::ParameterValue(false));
+  declare_parameter("publish_odom", rclcpp::ParameterValue(false));
   declare_parameter("publish_tf", rclcpp::ParameterValue(false));
   // declare_parameter("scale_factor", rclcpp::ParameterValue(1.0));
   declare_parameter("image_left_topic", rclcpp::ParameterValue(std::string("/camera/image_left_raw")));
@@ -90,6 +94,7 @@ void Stereo::load_params()
   get_parameter("image_right_topic", image_right_topic_param);
   get_parameter("use_viewer", use_viewer_param);
   get_parameter("publish_raw", publish_raw_param);
+  get_parameter("publish_odom", publish_odom_param);
   get_parameter("publish_tf", publish_tf_param);
   // scale_factor_param = get_parameter("scale_factor").as_double();
 
@@ -99,7 +104,7 @@ void Stereo::load_params()
     RCLCPP_INFO(get_logger(), "Publish raw Twc");
   if (publish_tf_param)
     RCLCPP_INFO(get_logger(), "Publish TF");
-  else
+  if (publish_odom_param)
     RCLCPP_INFO(get_logger(), "Publish stereo/odom");
 }
 
@@ -140,7 +145,8 @@ void Stereo::topic_callback(const sensor_msgs::msg::Image::ConstSharedPtr &image
     } else if (publish_tf_param) {
       update_tf_transform(twc, msg_time);
       publish_pose(twc, msg_time);
-    } else {
+    } 
+    if (publish_odom_param) {
       publish_odom(twc, msg_time);
     }
   }
@@ -206,23 +212,13 @@ void Stereo::publish_odom(Sophus::SE3f twc, rclcpp::Time msg_time) const
   Eigen::Quaternion<float> const q_se3f = twc.unit_quaternion();
   Eigen::Vector3f t_vec = twc.translation();
 
-  tf2::Quaternion q_tf;
-  q_tf.setX(q_se3f.z());
-  q_tf.setY(-q_se3f.x());
-  q_tf.setZ(-q_se3f.y());
-  q_tf.setW(q_se3f.w());
-
-  tf2::Vector3 t_tf(
-      t_vec(2),
-      -t_vec(0),
-      -t_vec(1));
-
-
   nav_msgs::msg::Odometry odom;
 
   odom.header.stamp = msg_time;
   odom.header.frame_id = "map";
   odom.child_frame_id = camera_frame_id_param; // base_frame_id_param;
+
+  tf2::Quaternion q_tf;
 
   odom.pose.pose.position.x = t_vec(2);
   odom.pose.pose.position.y = -t_vec(0);
